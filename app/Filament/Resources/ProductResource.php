@@ -10,6 +10,7 @@ use Filament\Resources\Form;
 use Filament\Resources\Resource;
 use Filament\Resources\Table;
 use Filament\Tables;
+use Illuminate\Support\Str;
 
 class ProductResource extends Resource
 {
@@ -21,8 +22,16 @@ class ProductResource extends Resource
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('name')->required(),
-                Forms\Components\TextInput::make('price')->required(),
+                Forms\Components\TextInput::make('name')
+                    ->required()
+                    ->reactive()
+                    ->afterStateUpdated(function (\Closure $set, $state) {
+                        $set('slug', Str::slug($state));
+                    }),
+                Forms\Components\TextInput::make('slug')->required(),
+                //Forms\Components\TextInput::make('price')->numeric()->required(),
+                Forms\Components\TextInput::make('price')->rule('numeric')->required(),
+                Forms\Components\FileUpload::make('image'),
             ]);
     }
 
@@ -30,9 +39,12 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('name'),
-                Tables\Columns\TextColumn::make('price'),
+                Tables\Columns\TextColumn::make('name')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('price')->money(currency: 'usd')->sortable()->searchable(),
+                Tables\Columns\TextColumn::make('slug')->sortable()->searchable(),
+                Tables\Columns\ImageColumn::make('image')->width(50)->height(50),
             ])
+            ->defaultSort('price', 'asc') //desc
             ->filters([
                 //
             ]);
